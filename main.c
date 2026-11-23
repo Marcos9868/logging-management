@@ -5,44 +5,73 @@
 #include <string.h>
 #include <stdbool.h>
 
+// Define
+#define LOG_TITLE_SIZE 50
 size_t initial = 0;
 
-typedef struct {
-  uint8_t id;
-  char logTitle[50];
+struct Log {
+  time_t createdAt;
   char *description;
-  char *createdAt;
-} Log;
+  uint32_t id;
+  int level;
+  char logTitle[LOG_TITLE_SIZE];
+};
 
-void log_free(Log *log);
-void log_init(Log *log);
-Log create_log(char title, char *desc, char *date);
+typedef enum {
+  LOG_LEVEL_DEBUG = 10,
+  LOG_LEVEL_INFO = 20,
+  LOG_LEVEL_WARNING = 30,
+  LOG_LEVEL_ERROR = 40,
+  LOG_LEVEL_CRITICAL = 50
+} LogLevel;
+
+typedef enum {
+  LOG_ERR_FULL = -5,
+  LOG_ERR_NO_MEMORY = -4,
+  LOG_ERR_INVALID_TIME = -3,
+  LOG_ERR_INVALID_LEVEL = -2,
+  LOG_ERR_INVALID_TITLE = -1,
+  LOG_OK = 1
+} LogStatus;
+
+void log_free(struct Log *log);
+void log_init(struct Log *log);
+int create_log(struct Log *out, const char *title, const char *desc, int level, time_t date);
 char build_datetime();
+int classify_log(const char *title, const char *desc);
 
-Log create_log(char title, char *desc, char *date) {
-  Log log;
-  uint8_t i = initial;
-  if (strlen(&title) == 0 && desc == NULL) {
-    perror("Título e descrição estão vazios ou inválidos");
-    log_free(&log);
-    return log;
+int create_log(struct Log *out, const char *title, const char *desc, int level, time_t date) {
+  uint32_t i = initial;
+  if (title == NULL || title[0] == '\0') {
+    return LOG_ERR_INVALID_TITLE;
   }
   initial++;
-  log.id = initial; 
-  log.logTitle[0] = title;
-  log.description = desc;
-  log.createdAt = date;
-  return log;
+  out->id = initial; 
+  char *copyDesc = strdup(desc ? desc : "");
+  snprintf(out->logTitle, sizeof out->logTitle, "%s", title);
+
+  //  log->logTitle = strdup(title);
+  out->description = copyDesc; 
+  out->createdAt = date;
+  out->level = classify_log(title, desc);
+  if (create_log(...) != LOG_OK) {
+    return LOG_ERR_FULL;
+  }
+  return LOG_OK;
 }
 
-void log_init(Log *log) {
+int classify_log(const char *title, const char *desc) {
+  return 0;
+}
+
+void log_init(struct Log *log) {
   log->id = 0;
-  log->logTitle[0] = '0';
+  log->logTitle = '0';
   log->description = NULL;
   log->createdAt = NULL;
 }
 
-void log_free(Log *log) {
+void log_free(struct Log *log) {
   free(log->description);
   free(log->createdAt);
   log->description = NULL;
@@ -69,6 +98,7 @@ int main(void) {
     putchar(10);
     printf("Type your choice to procced: ");
     scanf("%d", &choice);
+    struct Log *log;
     switch (choice){
       case 1:
         printf("Title: ");
@@ -79,7 +109,7 @@ int main(void) {
         putchar(10);
         printf("Catching current datetime..");
         createdAtInput = build_datetime();
-        Log log = create_log(*title, descp, &createdAtInput);
+        *log = create_log(title, descp, createdAtInput);
         break;
       case 2:
         break;
