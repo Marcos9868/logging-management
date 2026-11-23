@@ -1,0 +1,5 @@
+.vscode
+.ccls-cache
+.vs
+.env
+*.o
